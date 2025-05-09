@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.ericyl.cryptographical'
+group = 'com.ericyl.utils'
 version = '0.1.0-SNAPSHOT'
 
 repositories {
@@ -44,10 +44,13 @@ publishing {
     }
 
     repositories {
+        // 新的Central Portal发布配置
         maven {
-            name = "OSSRH"
-//            url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+            name = "CentralPortal"
+            // 对于正式版本
+            // url = "https://central.sonatype.com/api/v1/publisher"
+            // 对于SNAPSHOT版本
+            url = "https://central.sonatype.com/repository/maven-snapshots/"
             credentials {
                 username = System.getenv("MAVEN_USERNAME")
                 password = System.getenv("MAVEN_PASSWORD")
@@ -57,7 +60,9 @@ publishing {
 }
 
 dependencies {
-    implementation("org.bouncycastle:bcprov-jdk15on:${bouncycastleVersion}")
+
+    api("org.bouncycastle:bcprov-jdk18on:${bouncycastleVersion}")
+
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
