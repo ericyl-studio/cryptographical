@@ -10,7 +10,7 @@
    repositories {
 
      maven {
-       url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+       url = uri("https://central.sonatype.com/repository/maven-snapshots/")
      }
    
     //...
@@ -20,8 +20,7 @@
 2. 配置依赖
    ```
    dependencies {
-    implementation('com.ericyl.cryptographical:cryptographical:0.1.0-SNAPSHOT')
-    implementation("org.bouncycastle:bcprov-jdk15on:${bouncycastleVersion}")
+    implementation('com.ericyl.utils:cryptographical:0.1.0-SNAPSHOT')
    }
    ```
 
