@@ -57,6 +57,9 @@ jreleaser {
                     url = 'https://central.sonatype.com/api/v1/publisher'
                     username = System.getenv('MAVEN_USERNAME')
                     password = System.getenv('MAVEN_PASSWORD')
+
+                    // 必需的staging目录配置
+                    stagingRepository('build/libs')
                 }
             }
         }
