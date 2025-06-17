@@ -51,6 +51,13 @@ jobs:
       - name: Run tests
         run: ./gradlew test
 
+      # 创建JReleaser必需的目录
+      - name: Create JReleaser directories
+        run: |
+          mkdir -p build/jreleaser
+          mkdir -p build/libs
+          echo "创建JReleaser输出目录"
+
       # 验证生成的JAR文件
       - name: Verify JAR artifacts
         run: |
