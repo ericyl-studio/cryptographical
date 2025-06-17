@@ -2,10 +2,9 @@
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
-# This workflow will build a package using Gradle and then publish it to GitHub packages when a release is created
-# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#Publishing-using-gradle
+# This workflow will build a package using Gradle and then publish it to Maven Central
 
-name: Build and Release
+name: Build and Release to Maven Central
 
 on:
   push:
@@ -15,34 +14,112 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 8
-      uses: actions/setup-java@v4
-      with:
-        java-version: '8'
-        distribution: 'temurin'
-        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
 
-    - name: Build with Gradle
-      run: ./gradlew build
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
 
-    # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
-    # the publishing section of your build.gradle
-    - name: Publish to GitHub Packages
-      run: ./gradlew publish
-      env:
-        USERNAME: ${{ github.actor }}
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-        MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+      # 导入GPG密钥
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      # 设置版本号（从tag提取）
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          # 移除v前缀（如果存在）
+          VERSION=${VERSION#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          sed -i "s/version = .*/version = '$VERSION'/" build.gradle
+          echo "设置版本号为: $VERSION"
+
+      # 构建项目并生成所有JAR文件
+      - name: Build with Gradle
+        run: ./gradlew clean build
+
+      # 运行测试
+      - name: Run tests
+        run: ./gradlew test
+
+      # 验证生成的JAR文件
+      - name: Verify JAR artifacts
+        run: |
+          VERSION=${VERSION:-$(grep "version = " build.gradle | cut -d "'" -f 2)}
+          echo "检查版本: $VERSION"
+          echo "检查生成的JAR文件..."
+
+          JAR_DIR="build/libs"
+          ls -la "$JAR_DIR/" || { echo "错误: JAR目录不存在"; exit 1; }
+
+          # 验证必需的JAR文件存在
+          required_jars=(
+            "cryptographical-$VERSION.jar"
+            "cryptographical-$VERSION-sources.jar" 
+            "cryptographical-$VERSION-javadoc.jar"
+          )
+
+          for jar in "${required_jars[@]}"; do
+            if [ ! -f "$JAR_DIR/$jar" ]; then
+              echo "错误: 缺少必需的JAR文件 $jar"
+              exit 1
+            fi
+            echo "✅ 找到JAR文件: $jar"
+          done
+          echo "✅ 所有必需的JAR文件都存在"
+
+      # Maven Central发布 - Dry Run
+      - name: Dry run publish to Maven Central
+        run: ./gradlew jreleaserDeploy --dry-run
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      # 实际发布到Maven Central
+      - name: Publish to Maven Central
+        run: ./gradlew jreleaserDeploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      # 发布成功后的总结
+      - name: Publication Summary
+        if: success()
+        run: |
+          VERSION=${VERSION:-$(grep "version = " build.gradle | cut -d "'" -f 2)}
+          echo "🎉 发布成功！"
+          echo ""
+          echo "📦 发布信息:"
+          echo "  版本: $VERSION"
+          echo "  GroupId: com.ericyl.utils"
+          echo "  ArtifactId: cryptographical"
+          echo ""
+          echo "📖 使用方式:"
+          echo "  Gradle: implementation 'com.ericyl.utils:cryptographical:$VERSION'"
+          echo "  Maven:  <dependency>"
+          echo "            <groupId>com.ericyl.utils</groupId>"
+          echo "            <artifactId>cryptographical</artifactId>"
+          echo "            <version>$VERSION</version>"
+          echo "          </dependency>"
+          echo ""
+          echo "🔍 验证位置:"
+          echo "  Central Portal: https://central.sonatype.com/publishing/deployments"
+          echo "  Maven搜索: https://search.maven.org/search?q=g:com.ericyl.utils"
