@@ -32,29 +32,31 @@ jreleaser {
             license = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
         }
         
-        // Java项目配置
         java {
             groupId = 'com.ericyl.utils'
             artifactId = 'cryptographical'
-            mainClass = '' // 如果没有main class就留空
+            mainClass = ''
         }
     }
     
-    // GPG签名配置
+    // GPG签名配置 - 使用环境变量
     signing {
         active = 'ALWAYS'
         armored = true
+        publicKey = System.getenv('JRELEASER_GPG_PUBLIC_KEY')
+        secretKey = System.getenv('JRELEASER_GPG_SECRET_KEY')
+        passphrase = System.getenv('JRELEASER_GPG_PASSPHRASE')
     }
     
-    // Maven Central发布配置 - 简化配置
+    // Maven Central发布配置
     deploy {
         maven {
             mavenCentral {
                 sonatype {
                     active = 'ALWAYS'
                     url = 'https://central.sonatype.com/api/v1/publisher'
-                    username = System.getenv("MAVEN_USERNAME")
-                    password = System.getenv("MAVEN_PASSWORD")
+                    username = System.getenv('MAVEN_USERNAME')
+                    password = System.getenv('MAVEN_PASSWORD')
                 }
             }
         }
