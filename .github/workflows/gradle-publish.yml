@@ -32,57 +32,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
 
-      # 设置版本号（从tag提取）
-      - name: Set version from tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          # 移除v前缀（如果存在）
-          VERSION=${VERSION#v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          sed -i "s/version = .*/version = '$VERSION'/" build.gradle
-          echo "设置版本号为: $VERSION"
-
       # 构建项目并生成所有JAR文件
       - name: Build with Gradle
-        run: ./gradlew clean build
-
-      # 运行测试
-      - name: Run tests
-        run: ./gradlew test
-
-      # 创建JReleaser必需的目录
-      - name: Create JReleaser directories
-        run: |
-          mkdir -p build/jreleaser
-          mkdir -p build/libs
-          echo "创建JReleaser输出目录"
-
-      # 验证生成的JAR文件
-      - name: Verify JAR artifacts
-        run: |
-          VERSION=${VERSION:-$(grep "version = " build.gradle | cut -d "'" -f 2)}
-          echo "检查版本: $VERSION"
-          echo "检查生成的JAR文件..."
-
-          JAR_DIR="build/libs"
-          ls -la "$JAR_DIR/" || { echo "错误: JAR目录不存在"; exit 1; }
-
-          # 验证必需的JAR文件存在
-          required_jars=(
-            "cryptographical-$VERSION.jar"
-            "cryptographical-$VERSION-sources.jar" 
-            "cryptographical-$VERSION-javadoc.jar"
-          )
-
-          for jar in "${required_jars[@]}"; do
-            if [ ! -f "$JAR_DIR/$jar" ]; then
-              echo "错误: 缺少必需的JAR文件 $jar"
-              exit 1
-            fi
-            echo "✅ 找到JAR文件: $jar"
-          done
-          echo "✅ 所有必需的JAR文件都存在"
+        run: ./gradlew clean publish
 
       # 发布到Maven Central
       - name: Publish to Maven Central
@@ -98,22 +50,4 @@ jobs:
       - name: Publication Summary
         if: success()
         run: |
-          VERSION=${VERSION:-$(grep "version = " build.gradle | cut -d "'" -f 2)}
           echo "🎉 发布成功！"
-          echo ""
-          echo "📦 发布信息:"
-          echo "  版本: $VERSION"
-          echo "  GroupId: com.ericyl.utils"
-          echo "  ArtifactId: cryptographical"
-          echo ""
-          echo "📖 使用方式:"
-          echo "  Gradle: implementation 'com.ericyl.utils:cryptographical:$VERSION'"
-          echo "  Maven:  <dependency>"
-          echo "            <groupId>com.ericyl.utils</groupId>"
-          echo "            <artifactId>cryptographical</artifactId>"
-          echo "            <version>$VERSION</version>"
-          echo "          </dependency>"
-          echo ""
-          echo "🔍 验证位置:"
-          echo "  Central Portal: https://central.sonatype.com/publishing/deployments"
-          echo "  Maven搜索: https://search.maven.org/search?q=g:com.ericyl.utils"

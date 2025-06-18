@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'org.jreleaser' version '1.16.0'
 }
 
@@ -16,29 +17,51 @@ java {
     withSourcesJar()
 }
 
-// JReleaser配置 - 直接处理Maven Central发布和签名
-jreleaser {
-    project {
-        name = 'cryptographical'
-        description = 'AES + RSA cryptographical library'
-        longDescription = 'A Java library providing AES and RSA cryptographic functions with BouncyCastle integration'
-        copyright = 'Ericyl Studio'
-        authors = ['Ericyl Studio']
-        license = 'Apache-2.0'
-        
-        links {
-            homepage = 'https://github.com/ericyl-studio/cryptographical'
-            documentation = 'https://github.com/ericyl-studio/cryptographical'
-            license = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-        }
-        
-        java {
-            groupId = 'com.ericyl.utils'
-            artifactId = 'cryptographical'
-            mainClass = ''
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // 从 java 组件中自动捕获项目的artifact
+            from components.java
+
+            // 可选：配置pom文件的生成，增加项目描述和开发者信息等
+            pom {
+                name = 'Cryptographical'
+                description = 'AES + RSA'
+                url = 'https://www.ericyl.com/cryptographical'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'ericyl'
+                        name = 'Ericyl Studio'
+                        email = 'ericyl@ericyl.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/ericyl-studio/cryptographical.git'
+                    developerConnection = 'scm:git:ssh://github.com/ericyl-studio/cryptographical.git'
+                    url = 'https://github.com/ericyl-studio/cryptographical'
+                }
+            }
         }
     }
-    
+
+    repositories {
+        maven {
+            url = layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+
+}
+
+
+// JReleaser配置 - 直接处理Maven Central发布和签名
+jreleaser {
+
     // GPG签名配置 - 使用环境变量
     signing {
         active = 'ALWAYS'
@@ -47,7 +70,7 @@ jreleaser {
         secretKey = System.getenv('JRELEASER_GPG_SECRET_KEY')
         passphrase = System.getenv('JRELEASER_GPG_PASSPHRASE')
     }
-    
+
     // Maven Central发布配置
     deploy {
         maven {
@@ -59,18 +82,12 @@ jreleaser {
                     password = System.getenv('MAVEN_PASSWORD')
 
                     // 必需的staging目录配置
-                    stagingRepository('build/libs')
+                    stagingRepository('build/staging-deploy')
                 }
             }
         }
     }
-    
-    // 禁用GitHub发布
-    release {
-        github {
-            enabled = false
-        }
-    }
+
 }
 
 dependencies {
