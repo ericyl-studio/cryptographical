@@ -26,12 +26,12 @@ publishing {
             // 可选：配置pom文件的生成，增加项目描述和开发者信息等
             pom {
                 name = 'Cryptographical'
-                description = 'AES + RSA'
+                description = 'AES + RSA cryptographical library'
                 url = 'https://www.ericyl.com/cryptographical'
                 licenses {
                     license {
                         name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
                     }
                 }
                 developers {
