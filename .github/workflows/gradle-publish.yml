@@ -36,6 +36,12 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean publish
 
+      # 创建JReleaser必需的目录
+      - name: Create JReleaser directories
+        run: |
+          mkdir -p build/jreleaser
+          echo "创建JReleaser输出目录"
+
       # 发布到Maven Central
       - name: Publish to Maven Central
         run: ./gradlew jreleaserDeploy --stacktrace

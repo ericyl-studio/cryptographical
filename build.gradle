@@ -55,9 +55,7 @@ publishing {
             url = layout.buildDirectory.dir('staging-deploy')
         }
     }
-
 }
-
 
 // JReleaser配置 - 直接处理Maven Central发布和签名
 jreleaser {
