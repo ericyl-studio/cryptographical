@@ -59,6 +59,26 @@ publishing {
 
 // JReleaser配置 - 直接处理Maven Central发布和签名
 jreleaser {
+    project {
+        name = 'cryptographical'
+        description = 'AES + RSA cryptographical library'
+        longDescription = 'A Java library providing AES and RSA cryptographic functions with BouncyCastle integration'
+        copyright = 'Ericyl Studio'
+        authors = ['Ericyl Studio']
+        license = 'Apache-2.0'
+        
+        links {
+            homepage = 'https://github.com/ericyl-studio/cryptographical'
+            documentation = 'https://github.com/ericyl-studio/cryptographical'
+            license = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+        }
+        
+        java {
+            groupId = 'com.ericyl.utils'
+            artifactId = 'cryptographical'
+            mainClass = ''
+        }
+    }
 
     // GPG签名配置 - 使用环境变量
     signing {
@@ -86,6 +106,12 @@ jreleaser {
         }
     }
 
+    // 禁用GitHub发布
+    release {
+        github {
+            enabled = false
+        }
+    }
 }
 
 dependencies {
